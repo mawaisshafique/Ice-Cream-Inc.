@@ -1,101 +1,137 @@
 <!DOCTYPE html>
 <html lang="en-us">
-  <head>
-    <!--OTP version 1.2-->
+<head>
+    <!-- Template: MSStart + Unity Loading UI (OTP 1.2 style) -->
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Ice Cream Inc.</title>
+    <title>Unity WebGL Player | Ice Cream Inc.</title>
+
+    <!-- PWA manifest (real file, not a blob) -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Favicon + default Unity stylesheet (for loading bar / layout) -->
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
-  </head>
-  <body>
-    <div id="unity-container" class="unity-desktop" style="width: 100%; height: 100%; overflow-x: hidden; overflow-y: hidden;">
-      <canvas id="unity-canvas" style="width: 100%; height: 100%; cursor: default;" ></canvas>
-      <div id="unity-loading-bar">
+
+    <!-- MSStart (MSN) Games SDK -->
+    <script src="https://assets.msn.com/staticsb/statics/latest/msstart-games-sdk/msstart-v1.0.0-rc.20.min.js"></script>
+
+    <!-- Prevent scrollbars on the page itself -->
+    <style>
+        html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
+    </style>
+</head>
+
+<body>
+<!-- Unity container + loading UI (from reference template) -->
+<div id="unity-container" class="unity-desktop" style="width: 100%; height: 100%; overflow-x: hidden; overflow-y: hidden;">
+    <canvas id="unity-canvas" style="width: 100%; height: 100%; cursor: default;"></canvas>
+
+    <div id="unity-loading-bar">
         <div id="unity-logo"></div>
         <div id="unity-progress-bar-empty">
-          <div id="unity-progress-bar-full"></div>
+            <div id="unity-progress-bar-full"></div>
         </div>
-      </div>
     </div>
-    <script>
-      
-        //Lock Scaling/Zooming
-        document.getElementsByTagName("head")[0].innerHTML += '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">';
-        document.getElementsByTagName("head")[0].innerHTML += '<meta name="HandheldFriendly" content="true" />';
+</div>
 
-        document.addEventListener("gesturestart", function (e)
-        {
-          e.preventDefault();
-        });
+<!-- Your lightweight MSStart ad helpers (must set window.gameInstance) -->
+<script src="msstart-ads.js"></script>
 
-        document.addEventListener("gesturechange", function (e)
-        {
-          e.preventDefault();
-        });
-        document.addEventListener("gestureend", function (e)
-        {
-          e.preventDefault();
-        });
+<script>
+    /* ---------------------------- Viewport & gesture lock ---------------------------- */
+    // Match the reference: lock zooming / scaling and mark as handheld-friendly
+    document.head.insertAdjacentHTML('beforeend',
+        '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">'
+    );
+    document.head.insertAdjacentHTML('beforeend',
+        '<meta name="HandheldFriendly" content="true" />'
+    );
 
-      var container = document.querySelector("#unity-container");
-      var canvas = document.querySelector("#unity-canvas");
-      var loadingBar = document.querySelector("#unity-loading-bar");
-      var progressBarFull = document.querySelector("#unity-progress-bar-full");
+    ['gesturestart','gesturechange','gestureend'].forEach(function(evt){
+        document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive:false });
+    });
 
-      var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/c54b1b8af512dc87708a48b8871e2276.loader.js";
-      var config = {
-        dataUrl: buildUrl + "/314081dd680b70008581ee4fbcaeb669.data.unityweb",
-        frameworkUrl: buildUrl + "/27c92c2c614cd167c99be21f8b1f5a0f.framework.js.unityweb",
-        codeUrl: buildUrl + "/9e7c4ac021bedc50d8e27e45b586ff13.wasm.unityweb",
+    /* ---------------------------- Elements & Build config ---------------------------- */
+    var container = document.getElementById('unity-container');
+    var canvas = document.getElementById('unity-canvas');
+    var loadingBar = document.getElementById('unity-loading-bar');
+    var progressBarFull = document.getElementById('unity-progress-bar-full');
+
+    var buildUrl = "Build";
+    var loaderUrl = buildUrl + "/7a339fd99f34316796e16cdabfcfce1f.loader.js";
+
+    // Unity config (paths point into Build/)
+    var config = {
+        dataUrl:      buildUrl + "/89b06d44693b7f57230de6bcc1b6fa12.data.unityweb",
+        frameworkUrl: buildUrl + "/df9b8dc3345ad465e21e7ab984a90934.framework.js.unityweb",
+        codeUrl:      buildUrl + "/1884c41b8c58fce12c46224cc4b835f7.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
-        companyName: "RedLine Games",
-        productName: "Ice Cream Inc.",
-        productVersion: "1.0",
-      };
-      
-      //Mobile
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) 
-      {
+        companyName:  "RedLine Games",
+    productName:  "Ice Cream Inc.",
+    productVersion: "1.0",
+    // If you want to force canvas size behavior, uncomment:
+    // matchWebGLToCanvasSize: false,
+    // devicePixelRatio: 1,
+    };
+
+    /* ---------------------------- Responsive behavior ---------------------------- */
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        // Extra mobile viewport for Unity guidance (like your minimal version)
         var meta = document.createElement('meta');
         meta.name = 'viewport';
         meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
+        document.head.appendChild(meta);
 
         container.className = "unity-mobile";
-
         canvas.style.width = "100%";
         canvas.style.height = "100%";
 
-        //Resize window when chage orentation
-        window.addEventListener("orientationchange", event =>
-        {
-          canvas.style.width = "100%";
-        canvas.style.height = "100%";
+        // Keep full size on orientation changes
+        window.addEventListener("orientationchange", function () {
+            canvas.style.width = "100%";
+            canvas.style.height = "100%";
         });
-      } 
-      //PC
-      else 
-      {
+
+        // Optional: match your earlier left-aligned body on mobile
+        document.body.style.textAlign = "left";
+    } else {
+        // Desktop: full-bleed canvas
         canvas.style.width = "100%";
         canvas.style.height = "100%";
-      }
+    }
 
-      loadingBar.style.display = "block";
+    /* ---------------------------- Background handling ---------------------------- */
+    // Fallback to the BACKGROUND_COLOR variable (from your minimal template)
+    // BACKGROUND_COLOR is already a valid CSS color string from Unity.
+    canvas.style.background = "#231F20";
 
-      var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
-        createUnityInstance(canvas, config, (progress) => {
-          progressBarFull.style.width = 100 * progress + "%";
-        }).then((unityInstance) => {
-          loadingBar.style.display = "none";
-        }).catch((message) => {
-          alert(message);
+    /* ---------------------------- Show loading bar, load loader ---------------------------- */
+    loadingBar.style.display = "block";
+
+    var script = document.createElement("script");
+    script.src = loaderUrl;
+    script.onload = function () {
+        // Use progress callback to drive the reference loading bar
+        createUnityInstance(canvas, config, function (progress) {
+            progressBarFull.style.width = (progress * 100) + "%";
+        }).then(function (instance) {
+            loadingBar.style.display = "none";
+
+            // Expose instance for msstart-ads.js (SendMessage, etc.)
+            window.gameInstance = instance;
+
+            // Preload Interstitial + Rewarded once Unity is ready (your original behavior)
+            if (window.MSStartAds && typeof MSStartAds.preload === 'function') {
+                MSStartAds.preload();
+            }
+        }).catch(function (message) {
+            // Keep alert for parity with reference, plus console
+            console.error(message);
+            alert(message);
         });
-      };
-      document.body.appendChild(script);
-    </script>
-  </body>
+    };
+    document.body.appendChild(script);
+</script>
+</body>
 </html>
